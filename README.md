@@ -1,4 +1,7 @@
-## DBT profile to use.  Replave region , role and bucket values
+### This repository has code for this blog - [Lakehouse on AWS with Hudi and DBT](https://www.kamalsblog.com/2022/09/data-lakehouse-on-aws-with-hudi-and-dbt.html)
+
+
+### DBT profile to use.  Replace region , role and bucket values
 ``
 sync_tool_classes is not supported in dbt glue adapter. There is customized code available from this repo.
 ``
@@ -23,11 +26,12 @@ glue:
       sync_tool_classes: "org.apache.hudi.aws.sync.AwsGlueCatalogSyncTool"
 ```
 
-## Create table statement for test data included with repo
+### Create table statement for test data included with repo
 test_0.json can be used as initial load and test_update_0.json can be used to test incremental updates.
 ```
-CREATE EXTERNAL TABLE `huditest`(
+CREATE EXTERNAL TABLE `emp_raw`(
   `id` int,
+  `dept` int,
   `firstname` string,
   `lastname` string,
   `phone` string,
@@ -44,7 +48,7 @@ STORED AS INPUTFORMAT
 OUTPUTFORMAT 
   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 LOCATION
-  's3://skamalj-s3/hudidata/'
+  's3://<bucket-name>/hudidata/'
 TBLPROPERTIES (
   'classification'='json')
 ```

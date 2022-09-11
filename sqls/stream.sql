@@ -1,0 +1,1 @@
+select * from flights.hudi_emp_mor_rt where dept = 6

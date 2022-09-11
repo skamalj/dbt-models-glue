@@ -4,4 +4,4 @@ sources:
   - name: flights
     database: flights
     tables:
-      - name: huditest
+      - name: emp_raw

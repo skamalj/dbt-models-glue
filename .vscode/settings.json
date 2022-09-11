@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+
+        {
+            "connectionMethod": "Profile",
+            "previewLimit": 50,
+            "driver": "driver.athena",
+            "name": "Athena",
+            "workgroup": "primary",
+            "profile": "default",
+            "region": "ap-south-1"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

@@ -17,7 +17,7 @@
 #}
 
 select id,firstname,lastname,phone,email,pincode,joiningdate,eventtime,from_unixtime(eventtime/1000) updated_at
-from {{ ref('hudidest_unique_with_options') }}
+from {{ ref('hudi_emp_mor') }}
 {% if is_incremental() %}
     where eventtime > (select max(eventtime) from {{ this }})
 {% endif %}
