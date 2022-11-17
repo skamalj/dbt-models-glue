@@ -1,0 +1,47 @@
+delta:
+  outputs:
+    dev:
+      database: flights
+      extra_jars: s3://skamalj-jars/calcite-core-1.15.0.jar,s3://skamalj-jars/hudi-spark3.1-bundle_2.12-0.12.0.jar,s3://skamalj-jars/spark-avro_2.12-3.1.0.jar,s3://skamalj-jars/httpclient-4.5.9.jar
+      glue_version: '3.0'
+      idle_timeout: 10
+      location: s3://skamalj-dbt
+      query-comment: This is a glue dbt example
+      region: ap-south-1
+      role_arn: arn:aws:iam::715267777840:role/AWSGlueServiceRoleDefault
+      schema: flights
+      session_provisioning_timeout_in_seconds: 120
+      type: glue
+      worker_type: Standard
+      workers: 1
+  target: dev
+glue:
+  outputs:
+    dev:
+      type: glue
+      query-comment: This is a glue dbt example
+      role_arn: arn:aws:iam::715267777840:role/AWSGlueServiceRoleDefault
+      region: ap-south-1
+      workers: 3
+      worker_type: Standard
+      idle_timeout: 10
+      glue_version: "3.0"
+      extra_jars: "s3://skamalj-jars/calcite-core-1.15.0.jar,s3://skamalj-jars/hudi-spark3.1-bundle_2.12-0.12.0.jar,s3://skamalj-jars/spark-avro_2.12-3.1.0.jar,s3://skamalj-jars/httpclient-4.5.9.jar,s3://skamalj-jars/json-serde-1.3.8-jar-with-dependencies.jar"
+      schema: "flights"
+      database: "flights"
+      session_provisioning_timeout_in_seconds: 120
+      location: "s3://skamalj-dbt/hudi"
+      conf: "spark.serializer=org.apache.spark.serializer.KryoSerializer"
+      sync_tool_classes: "org.apache.hudi.aws.sync.AwsGlueCatalogSyncTool"
+  target: dev
+my_dbt_demo:
+  outputs:
+    dev:
+      catalog: null
+      host: adb-6712427179327964.4.azuredatabricks.net
+      http_path: sql/protocolv1/o/6712427179327964/0808-133704-5gcf0mu2
+      schema: dbt
+      threads: 1
+      token: dapi2002fb609e888aab11bedce000a4ec01
+      type: databricks
+  target: dev
