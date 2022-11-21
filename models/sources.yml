@@ -5,3 +5,4 @@ sources:
     database: flights
     tables:
       - name: emp_raw
+      - name: chdrpf

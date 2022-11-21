@@ -2,7 +2,7 @@
 version: 2
 
 models:
-  - name: hudidest
+  - name: hudi_from_hudi
     description: "A starter dbt model"
     columns:
       - name: id
