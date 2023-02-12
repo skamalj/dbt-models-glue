@@ -52,3 +52,24 @@ LOCATION
 TBLPROPERTIES (
   'classification'='json')
 ```
+
+## Create EMR cluster
+aws emr create-cluster --name emrdbt  --use-default-roles --release-label emr-6.7.0 \
+--instance-type m4.large --instance-count 2 \
+--applications Name=Hadoop Name=Hive Name=Spark Name=Presto Name=Tez \
+--log-uri s3://skamalj-s3/emr_logs/ \
+--ec2-attributes KeyName=home-key,SubnetId=subnet-07f82958e75238837 \
+--steps Name="Start Thrift Server",Jar=command-runner.jar,Args=sudo,/usr/lib/spark/sbin/start-thriftserver.sh \
+--configurations '[{"Classification":"spark-hive-site","Properties":{"hive.metastore.client.factory.class":"com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory"}}]'
+
+## EMR config
+emr:
+ target: dev
+ outputs:
+  dev:
+   type: spark
+   method: thrift
+   schema: dbt
+   host: master.hostname
+   port: 10001
+   user: root
