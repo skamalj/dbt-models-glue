@@ -54,13 +54,15 @@ TBLPROPERTIES (
 ```
 
 ## Create EMR cluster
-aws emr create-cluster --name emrdbt  --use-default-roles --release-label emr-6.7.0 \
---instance-type m4.large --instance-count 2 \
---applications Name=Hadoop Name=Hive Name=Spark Name=Presto Name=Tez \
+aws emr create-cluster --name emrdbt --use-default-roles --release-label emr-6.7.0 \
+--instance-groups InstanceGroupType=MASTER,InstanceCount=1,InstanceType=m5.xlarge InstanceGroupType=CORE,InstanceCount=1,InstanceType=m4.large InstanceGroupType=TASK,InstanceCount=2,InstanceType=m4.large \
+--applications Name=Hadoop Name=Spark Name=Tez \
+--step-concurrency-level 3 \
 --log-uri s3://skamalj-s3/emr_logs/ \
 --ec2-attributes KeyName=home-key,SubnetId=subnet-07f82958e75238837 \
---steps Name="Start Thrift Server",Jar=command-runner.jar,Args=sudo,/usr/lib/spark/sbin/start-thriftserver.sh \
---configurations '[{"Classification":"spark-hive-site","Properties":{"hive.metastore.client.factory.class":"com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory"}}]'
+--bootstrap-actions Path="s3://skamalj-dbt/emr/emrbootstrap.sh" \
+--managed-scaling-policy file://./emrscaling.json \
+--configurations file://./emrconfig.json
 
 ## EMR config
 emr:
@@ -73,3 +75,72 @@ emr:
    host: master.hostname
    port: 10001
    user: root
+
+   sudo cp /usr/lib/hudi/hudi-spark-bundle.jar /usr/lib/spark/jars
+
+   sudo /usr/lib/spark/sbin/start-thriftserver.sh --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.hudi.catalog.HoodieCatalog --conf spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
+
+    merge into flights.hudi_emp_cow_emr as DBT_INTERNAL_DEST
+    using flights.emp_raw as DBT_INTERNAL_SOURCE
+    on DBT_INTERNAL_SOURCE.id = DBT_INTERNAL_DEST.id
+    when matched then update set * 
+    when not matched then insert *
+
+  create table flights.hudi_cow_pt_tbl (
+  id bigint,
+  name string,
+  ts bigint,
+  dt string,
+  hh string
+) using hudi
+tblproperties (
+  type = 'mor',
+  primaryKey = 'id,hh',
+  preCombineField = 'ts',
+  hoodie.datasource.hive_sync.skip_ro_suffix = true
+ )
+partitioned by (dt);
+
+insert into hudi_cow_pt_tbl select 1, 'a0', 1000, '2021-12-09', '10';
+select * from hudi_cow_pt_tbl;
+
+-- record id=1 changes `name`
+insert into hudi_cow_pt_tbl select 1, 'a1', 1001, '2021-12-09', '10';
+select * from hudi_cow_pt_tbl;
+
+-- time travel based on first commit time, assume `20220307091628793`
+select * from hudi_cow_pt_tbl timestamp as of '20220307091628793' where id = 1;
+-- time travel based on different timestamp formats
+select * from hudi_cow_pt_tbl timestamp as of '2022-03-07 09:16:28.100' where id = 1;
+select * from hudi_cow_pt_tbl timestamp as of '2022-03-08' where id = 1;
+
+create table if not exists flights.h3(
+  id bigint, 
+  name string, 
+  price double
+) using hudi
+options (
+  primaryKey = 'id',
+  type = 'mor',
+  hoodie.cleaner.fileversions.retained = '20',
+  hoodie.keep.max.commits = '20'
+);
+
+create table flights.hudi_ctas_cow_pt_tbl
+using hudi
+tblproperties (type = 'mor', primaryKey = 'id', preCombineField = 'ts')
+as
+select 1 as id, 'a1' as name, 10 as price, 1000 as ts, '2021-12-01' as dt;
+
+create table flights.hudi_ctas_emp_mor
+using hudi
+tblproperties (type = 'mor', primaryKey = 'id', preCombineField = 'eventtime', hoodie.datasource.hive_sync.skip_ro_suffix = true)
+partitioned by (dept)
+as
+select * from flights.emp_raw;
+
+create table flights.hudi_ctas_cow_nonpcf_tbl
+using hudi
+tblproperties (primaryKey = 'id')
+as
+select 1 as id, 'a1' as name, 10 as price;

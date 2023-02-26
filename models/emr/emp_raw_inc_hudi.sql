@@ -4,18 +4,16 @@
     file_format='hudi',
     unique_key='id',
     partition_by='dept',
-    hudi_options={
-       'hoodie.datasource.write.table.type':'MERGE_ON_READ',
-       'hoodie.datasource.write.precombine.field': 'eventtime',
-       'hoodie.combine.before.insert':'true',
-       'hoodie.datasource.write.hive_style_partitioning':'true'
+    merge_exclude_columns = ['_hoodie_commit_time'],
+    options={
+       'type': 'cow',
+       'primaryKey': 'id',
+       'preCombineField': 'eventtime'
    },
 ) }}
 
-select *
+select id,firstname,lastname,phone,email,pincode,joiningdate,eventtime,dept
 from {{ source('flights','emp_raw') }}
 {% if is_incremental() %}
     where eventtime > (select max(eventtime) from {{ this }})
 {% endif %}
-
-  
